@@ -7,9 +7,9 @@
 - ** 万恶的百度  百度地图是最最恶心的，一般，先将自己无偏移的坐标转火星坐标系，再由火星转百度经纬度，而你叠加的一定是百度的墨卡托投影的地图，百度墨卡托不等于我们常用的墨卡托，所以仍然是特例，将百度经纬转百度墨卡托。幸运的是，我们这个库都已经能支持了。
 本文于南京市中心采集某一个坐标，根据不同底图的切换，验证我们的纠偏js库的正确性。（注意：本库只用于叠加底图显示，不等于严格坐标解密，基本满足业务需求）
 	
-![Alt 天地图底图](/images/demo/tianditu.png "天地图")
-![Alt 百度底图](/images/demo/baidu.png "百度地图")
-![Alt 谷歌底图](/images/demo/google.png "谷歌地图")
+![Alt 天地图底图](http://freegis.github.io/images/demo/tianditu.png "天地图")
+![Alt 百度底图](http://freegis.github.io/images/demo/baidu.png "百度地图")
+![Alt 谷歌底图](http://freegis.github.io/images/demo/google.png "谷歌地图")
 例子请参考[ol3坐标纠正][1].
 本js代码只适用于少量点在前台叠加，如果是点线面等复杂图层且存放在PostGIS中，应进行全部图层批量转换。PostGIS转换库地址：[postgis_LayerTransform][3].
 
