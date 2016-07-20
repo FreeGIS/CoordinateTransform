@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>坐标转换</title>
+	<link rel="stylesheet" href="http://openlayers.org/en/v3.17.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="layerswitch/ol3-layerswitcher.css">
+    <script src="http://openlayers.org/en/v3.17.1/build/ol.js"></script>
+    <script src="layerswitch/ol3-layerswitcher.js"></script>
+    <script src="CoordinateTransform.js"></script>
+
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        (function(){
+            var googleMap=new ol.layer.Tile({
+                title: '谷歌街道图',
+                type: 'base',
+                visible: false,
+                source: new ol.source.XYZ({
+                    url: 'http://www.google.cn/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i342009817!3m9!2szh-CN!3sCN!5e18!12m1!1e47!12m3!1e37!2m1!1ssmartmaps!4e0&token=32965'
+                })
+            });
+
+
+            var resolutions = [];
+            var projection = new ol.proj.get("EPSG:3857");
+            for (var i = 0; i < 19; i++) {
+                resolutions[i] = Math.pow(2, 18 - i);
+            }
+            var projectionExtent = projection.getExtent();
+            var tilegrid = new ol.tilegrid.TileGrid({
+                origin: [0,0],
+                resolutions: resolutions
+            });
+            var baidusource = new ol.source.TileImage({
+                projection: projection,
+                tileGrid: tilegrid,
+                tileUrlFunction: function (xyz, obj1, obj2) {
+                    if (!xyz) {
+                        return "";
+                    }
+                    var z = xyz[0];
+                    var x = xyz[1];
+                    var y = xyz[2];
+                    if (x < 0) {
+                        x = "M" + (-x);
+                    }
+                    if (y < 0) {
+                        y = "M" + (-y);
+                    }
+                    return "http://online3.map.bdimg.com/tile/?qt=tile&x=" + x + "&y=" + y + "&z=" + z + "&styles=pl&udt=20141119&scaler=1";
+                }
+            });
+            var baiduMap = new ol.layer.Tile({
+                title: '百度街道图',
+                type: 'base',
+                visible: false,
+                extent: projectionExtent,
+                source: baidusource
+            });
+            //天地图。几乎不偏移，用来模拟WGS84的web墨卡托
+            var tiandituMap=new ol.layer.Group({
+                title: '天地图街道图',
+                type: 'base',
+                combine: true,
+                visible: true,
+                layers: [
+                    new ol.layer.Tile({
+                        source : new ol.source.XYZ({
+                            url : "http://t{1-7}.tianditu.com/DataServer?T=vec_w&x={x}&y={y}&l={z}"
+                        })
+                    }),
+                    new ol.layer.Tile({
+                        source : new ol.source.XYZ({
+                            url : "http://t{1-7}.tianditu.com/DataServer?T=cva_w&x={x}&y={y}&l={z}"
+                        })
+                    })
+                ]
+            });
+            baiduMap.on('change:visible',layerVisibleChange);
+            googleMap.on('change:visible',layerVisibleChange);
+            tiandituMap.on('change:visible',layerVisibleChange);
+
+            var drawLayer=new ol.layer.Vector({
+                source:new ol.source.Vector(),
+                style:new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 7,
+                        fill: new ol.style.Fill({
+                            color: '#FF3300'
+                        })
+                    })
+                })
+            });
+
+            var map = new ol.Map({
+                target: 'map',
+                layers: [
+
+                    new ol.layer.Group({
+                        'title': '底图',
+                        layers: [
+                            baiduMap,googleMap,tiandituMap
+                        ]
+                    }),
+                    drawLayer
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([118.77907276153564,32.06090055870935]),
+                    zoom: 13
+                })
+            });
+            var layerSwitcher = new ol.control.LayerSwitcher({
+                tipLabel: '图层管理'
+            });
+            map.addControl(layerSwitcher);
+
+            var wgs84Coor=[118.77907276153564,32.06090055870935];//测试的wgs84的坐标，真实经纬度
+            var feature=new ol.Feature();
+            feature.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(wgs84Coor)));
+            drawLayer.getSource().addFeature(feature);
+
+            var coordinateTransform=new CoordinateTransform();//转换库
+            //根据当前显示图层，转换坐标显示
+            function layerVisibleChange(e){
+                var layer= e.target;
+                if(layer.getVisible())
+                {
+                    switch(layer){
+                        case baiduMap:
+                            //先将wgs转百度经纬
+                            var coor=coordinateTransform.WGS2BD(wgs84Coor[0],wgs84Coor[1]);
+                            //底图都是墨卡托，百度墨卡托比较特殊
+                            var bdmkt=coordinateTransform.BD_WGS2MKT(coor[0],coor[1]);
+                            feature.setGeometry(new ol.geom.Point(bdmkt));
+                            break;
+                        case googleMap:
+                            //先将wgs84转火星
+                            var coor=coordinateTransform.WGS2GCJ(wgs84Coor[0],wgs84Coor[1]);
+                            //再将火星84转墨卡托投影
+                            var mktcoor=ol.proj.fromLonLat(coor);
+                            feature.setGeometry(new ol.geom.Point(mktcoor));
+                            break;
+                        case tiandituMap:
+                            var mktcoor=ol.proj.fromLonLat(wgs84Coor);
+                            feature.setGeometry(new ol.geom.Point(mktcoor));
+                            break;
+                    }
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
