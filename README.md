@@ -10,8 +10,9 @@
 ![Alt 天地图底图](http://freegis.github.io/images/demo/tianditu.png "天地图")
 ![Alt 百度底图](http://freegis.github.io/images/demo/baidu.png "百度地图")
 ![Alt 谷歌底图](http://freegis.github.io/images/demo/google.png "谷歌地图")
+
 例子请参考[ol3坐标纠正][1].
-本js代码只适用于少量点在前台叠加，如果是点线面等复杂图层且存放在PostGIS中，应进行全部图层批量转换。PostGIS转换库地址：[postgis_LayerTransform][3].
+本js代码只适用于少量点在前台叠加，如果是点线面等复杂图层且存放在PostGIS中，应进行全部图层批量转换。PostGIS转换库地址：[postgis_LayerTransform][2].
 
 [1]: http://freegis.github.io/examples/CoordinateTransform.html
 [2]: https://github.com/FreeGIS/postgis_LayerTransform
